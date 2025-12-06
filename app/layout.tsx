@@ -1,42 +1,26 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+import '@fontsource/inter'
+import '@fontsource/plus-jakarta-sans'
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+export const metadata = {
+  title: "DearMe - Write to your future self",
+  description: "A way to remember the old times",
+}
 
-export const metadata: Metadata = {
-  title: "DearMe - Write to Your Future Self",
-  description: "Journal app to write letters to your future self",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="bg-black text-white font-sans antialiased tracking-tight">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="class"
           enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+          >
+            {children}
+          </ThemeProvider>
       </body>
     </html>
-  );
+  )
 }
