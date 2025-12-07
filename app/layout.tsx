@@ -12,7 +12,7 @@ export const metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en">
-      <body className="bg-backround text-foreground font-sans antialiased tracking-tight font-[system-ui]">
+      <body className="bg-background text-foreground font-sans antialiased tracking-tight">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

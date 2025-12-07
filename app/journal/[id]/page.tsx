@@ -1,5 +1,5 @@
 "use client";
-
+ 
 import {useEffect, useState} from "react";
 import {useParams, useRouter} from "next/navigation";
 import {auth, db} from "@/lib/firebase" 
@@ -7,53 +7,50 @@ import {doc, getDoc, updateDoc, serverTimestamp} from "firebase/firestore";
 import { JournalEditor } from "@/components/ui/editor";
 
 export default function EntryPage() {
-    const {id} = useParams();
-    const router = useRouter();
-
-    const [entry, setEntry] = useState<any>(null)
-    const [tags, setTags] = useState<string>("");
+    const {id} = useParams()
+    const [entry, setEntry] = useState<any>(null);
+    const [tags, setTags] = useState("");
 
     useEffect(() => {
-        async function fetchEntry() {
-            const snap = await getDoc(doc(db, "journalEntries", id as string));
-            if (!snap.exists()) return router.push("/journal");
+        async function loadEntry() {
+            const ref = doc(db, "journalEntries", id as string);
+            const snap = await getDoc(ref);
+            if (!snap.exists()) return;
             const data = snap.data();
             setEntry(data);
-            setTags((data.tags || []).join(", "))
+            setTags((data.tags || []).join(","));
         }
-        fetchEntry();
-    }, [id, router]);
+        loadEntry();
+    }, [id]);
 
     async function save(content: string) {
+        if (!auth.currentUser) return;
         await updateDoc(doc(db, "journalEntries", id as string), {
             content, 
             tags: tags.split(",").map(t => t.trim()).filter(Boolean),
             updatedAt: serverTimestamp(),
-        })
+        });
     }
 
-    if (!entry) return <div className="flex-1 p-10 text-white/60">Loading...</div>
+    if (!entry) return <div className="p-10">Loading....</div>
 
-    const date = entry.createdAt?.toDate().toLocaleDateString();
-    const time = entry.createdAt?.toDate().toLocaleTimeString();
+    const date = entry.createdAt?.toDate()
+        ? entry.createdAt.toDate().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+        : "Unknown date";
 
     return (
-        <main className="flex-1 p-10 max-w-3xl mx-auto">
-            <div className="mb-6 text-sm text-white/40">
-                {date} at {time}
-            </div>
+        <main className="flex-1 overflow-y-auto p-10">
+            <h1 className="text-4xl font-bold mb-1">{entry.title}</h1>
+            <p className="text-white/40 mb-6">{date}</p>
 
             <input 
-                className="bg-transparent border-b border-white/10 text-white/70 focus:outline-none focus:border-orange-400 px-1 py-1 text-sm"
+                className="bg-transparent border-b border-border mb-4 text-sm text-white/60 focus:outline-none focus:border-accent px-1 py-1"
                 placeholder="Tags (comma separated)"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
             />
-        
-            <JournalEditor
-                content={entry.content}
-                onUpdate={save}
-            />
+
+            <JournalEditor content={entry.content} onUpdate={save} />
         </main>
-    ); 
+    )
 }

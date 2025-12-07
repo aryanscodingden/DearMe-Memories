@@ -2,50 +2,44 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {cn} from "@/lib/utils";
-import {Home, BookOpen, PlusCircle, Settings, PlusSquare} from 'lucide-react';
+import {Book, BookOpen, PlusCircle, Settings} from "lucide-react";
 
 export default function JournalLayout({children}: {children: React.ReactNode}) {
-    const pathname = usePathname();
+  const pathname = usePathname()
+  const menu = [
+    {name: "Journal", icon: BookOpen, href: "/journal"},
+    {name: "New Entry", icon: PlusCircle, href: "/journal/new"},
+    {name: "Settings", icon: Settings, href: "/settings"},
+  ];
 
-    const menu = [
-        {label: "Journal", href: "/journal", icon: BookOpen},
-        {label: "New Entry", href: "/journal/new", icon: PlusCircle},
-        {label: "Settings", href: "/settings", icon: Settings}
-    ];
+  return (
+    <div className="flex min-h-screen bg-background text-foreground">
+      <aside className="w-64 backdrop-blur-md bg-white/5 border-r border-border p-6 flex flex-col gap-8">
+        <h1 className="text-xl font-semibold tracking-tight">DearMe</h1>
 
-    return (
-        <div className="flex min-h-screen bg-linear-to-br from-black to-zinc-900 text-white">
-            <nav className="w-56 border-r border-white/10 px-6 py-8">
-                <h1 className="text-xl font-semibold mb-8">DearMe</h1>
+        <nav className="space-y-1">
+          {menu.map(item => {
+            const active = pathname.startsWith(item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition ${active ? "bg-accent/20 text-accent" : "text-white/70 hover:bg-white/10 hover:text-white"}`}
+              >
+                <Icon className="w-4 h-4"/>
+                {item.name}
+              </Link>
+            )
+          })}
+        </nav>
 
-                <ul className="space-y-2">
-                    {menu.map(item => {
-                        const Icon = item.icon;
-                        const active = pathname.startsWith(item.href);
-                        return (
-                            <li key={item.href}>
-                            <Link
-                                href={item.href}
-                                className={cn(
-                                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition",
-                                    active
-                                    ? "bg-white/10 text-orange-300"
-                                    : "text-white/70 hover:text-white hover:bg-white/5"
-                                )}
-                            >
-                                <Icon className="w-4 h-4"/>
-                                {item.label}
-                            </Link> 
-                            </li>
-                        )
-                    })}
-                </ul>
-            </nav>
-
-            <div className="flex-1 flex overflow-hidden">
-                    {children}
-            </div>
+        <div className="mt-auto text-xs text-white/40">
+          Logged in
         </div>
-    )
-} 
+      </aside>
+
+      <div className="flex-1">{children}</div>
+    </div>
+  )
+}
