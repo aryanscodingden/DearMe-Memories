@@ -18,6 +18,7 @@ export function JournalEditor ({content, onUpdate}: {
         ],
         content,
         autofocus: true,
+        immediatelyRender: false,
         onUpdate: ({editor}) => {
             onUpdate(editor.getHTML());
         },
