@@ -1,13 +1,19 @@
 "use client";
-
-import Link from "next/link";
-import {useEffect, useState, useMemo} from "react";
-import {auth, db} from "@/lib/firebase";
-import {collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp} from "firebase/firestore";
-import {onAuthStateChanged} from "firebase/auth";
-import { Users } from "lucide-react";
-import { signOut } from "firebase/auth";
-
+import { useEffect, useState, useMemo } from "react";
+import { auth, db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { JournalEditor } from "@/components/ui/editor";
 
 export default function JournalPage() {
   const [entries, setEntries] = useState<any[]>([]);
@@ -40,7 +46,7 @@ export default function JournalPage() {
     );
 
     const unsubscribe = onSnapshot(q, (snap) => {
-      setEntries(snap.docs.map(doc => ({id: doc.id, ...doc.data() })));
+      setEntries(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     });
 
     return unsubscribe;
@@ -50,9 +56,13 @@ export default function JournalPage() {
     return entries.reduce((groups: any, entry) => {
       try {
         const date = entry.createdAt?.toDate?.();
-        const monthYear = date 
-          ? new Date(date).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+        const monthYear = date
+          ? new Date(date).toLocaleDateString("en-US", {
+              month: "long",
+              year: "numeric",
+            })
           : "No Date";
+
         if (!groups[monthYear]) {
           groups[monthYear] = [];
         }
@@ -82,7 +92,7 @@ export default function JournalPage() {
               No entries yet. Create your first journal entry!
             </div>
           ) : (
-            Object.keys(groupedEntries).map(monthYear => (
+            Object.keys(groupedEntries).map((monthYear) => (
               <div key={monthYear}>
                 <h3 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2 pl-1">
                   {monthYear}
@@ -103,20 +113,23 @@ export default function JournalPage() {
                       <button
                         key={entry.id}
                         onClick={() => setSelectedEntry(entry)}
-                        className={`w-full text-left p-3 rounded-lg transition ${
-                          isSelected 
-                            ? "bg-orange-100 border border-orange-300 text-zinc-800" 
+                        className={`block w-full text-left p-3 rounded-lg transition ${
+                          isSelected
+                            ? "bg-orange-100 border border-orange-300 text-zinc-800"
                             : "hover:bg-white/60 border border-transparent text-zinc-700"
                         }`}
                       >
                         <div className="flex items-baseline gap-2 mb-1">
-                          <span className="text-[11px] font-medium text-orange-500">{day}</span>
+                          <span className="text-[11px] font-medium text-orange-500">
+                            {day}
+                          </span>
                           <p className="font-medium text-[14px] truncate flex-1">
                             {entry.title || "Untitled"}
                           </p>
                         </div>
                         <p className="text-xs text-zinc-400 line-clamp-2">
-                          {entry.content?.replace(/<[^>]*>?/gm, "") || "No content.."}
+                          {entry.content?.replace(/<[^>]*>?/gm, "") ||
+                            "No content.."}
                         </p>
                       </button>
                     );
@@ -130,38 +143,56 @@ export default function JournalPage() {
 
       <main className="flex-1 overflow-y-auto">
         {selectedEntry ? (
-          <div className="max-w-4xl mx-auto p-10">
-            <div className="mb-8">
+          <div className="h-full p-10">
+            <div className="mb-6">
               <h1 className="text-[34px] font-semibold leading-tight text-zinc-800">
                 {selectedEntry.title || "Untitled"}
               </h1>
-              <p className="text-sm text-zinc-500 mb-8">
+              <p className="text-sm text-zinc-500">
                 {selectedEntry.createdAt?.toDate()
-                  ? new Date(selectedEntry.createdAt.toDate()).toLocaleDateString("en-US", { 
-                      weekday: "long", 
-                      year: "numeric", 
-                      month: "long", 
-                      day: "numeric" 
+                  ? new Date(
+                      selectedEntry.createdAt.toDate()
+                    ).toLocaleDateString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
                     })
                   : "Unknown date"}
               </p>
             </div>
-            <div 
-              className="prose prose-stone max-w-none text-zinc-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: selectedEntry.content || "<p class='text-zinc-400'>No content yet...</p>" }}
+            <JournalEditor
+              key={selectedEntry.id}
+              content={selectedEntry.content || ""}
+              onUpdate={async (html: string) => {
+                if (!selectedEntry.id) return;
+                
+                // Update local state immediately for UI responsiveness
+                setSelectedEntry({
+                  ...selectedEntry,
+                  content: html,
+                });
+                
+                // Update in Firestore
+                await updateDoc(doc(db, "journalEntries", selectedEntry.id), {
+                  content: html,
+                  updatedAt: serverTimestamp(),
+                });
+              }}
             />
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-zinc-400">
-            Select an entry to view
+            Select an entry to edit
           </div>
         )}
       </main>
+
       {showAddModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white text-zinc-800 p-6 rounded-2xl w-96 space-y-4 shadow-xl">
             <h2 className="font-semibold text-xl mb-4">New Journal Entry</h2>
-            
+
             <div className="space-y-3">
               <input
                 type="text"
@@ -171,14 +202,14 @@ export default function JournalPage() {
                 onChange={(e) => setNewTitle(e.target.value)}
               />
 
-              <input 
+              <input
                 type="date"
                 className="w-full border border-stone-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
               />
 
-              <input 
+              <input
                 type="time"
                 className="w-full border border-stone-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
                 value={newTime}
@@ -197,12 +228,15 @@ export default function JournalPage() {
 
                   try {
                     const selectedDate = new Date(`${newDate}T${newTime}`);
-                    const docRef = await addDoc(collection(db, "journalEntries"), {
-                      title: newTitle.trim(), 
-                      content: "",
-                      userId: user.uid,
-                      createdAt: selectedDate,
-                    });
+                    const docRef = await addDoc(
+                      collection(db, "journalEntries"),
+                      {
+                        title: newTitle.trim(),
+                        content: "",
+                        userId: user.uid,
+                        createdAt: selectedDate,
+                      }
+                    );
 
                     setSelectedEntry({
                       id: docRef.id,
@@ -221,7 +255,7 @@ export default function JournalPage() {
                   }
                 }}
                 className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition"
-              > 
+              >
                 Create Entry
               </button>
 
@@ -236,6 +270,5 @@ export default function JournalPage() {
         </div>
       )}
     </div>
-  )
+  );
 }
-

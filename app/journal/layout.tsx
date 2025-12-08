@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, PlusCircle, Settings, LogOut } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
@@ -12,10 +12,16 @@ export default function JournalLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const links = [
     { label: "Journal", href: "/journal", icon: BookOpen },
     { label: "Settings", href: "/settings", icon: Settings },
   ];
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push("/");
+  };
 
   return (
     <div className="flex min-h-screen text-zinc-800 relative bg-linear-to-br from-stone-100 via-amber-50 to-orange-50">
@@ -48,7 +54,7 @@ export default function JournalLayout({
         
         <div className="p-6 border-t border-stone-200">
           <button
-            onClick={() => signOut(auth)}
+            onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-2 rounded-lg transition text-red-500 hover:bg-red-50 w-full"
           >
             <LogOut className="h-4 w-4" />

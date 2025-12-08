@@ -24,13 +24,13 @@ export function JournalEditor ({content, onUpdate}: {
         },
         editorProps: {
             attributes: {
-                class: "focus:outline-none font-serif text-lg leading-relaxed text-white caret-orange-400"
+                class: "focus:outline-none text-lg leading-relaxed text-zinc-800 caret-orange-500"
             }
         }
     })
 
     return (
-        <div className="prose prose-inverse max-w-full">
+        <div className="prose prose-stone max-w-full">
             <EditorContent editor={editor} className="min-h-[50vh] pb-40" />
         </div>
     )
