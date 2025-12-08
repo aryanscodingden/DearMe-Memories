@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, PlusCircle, Settings } from "lucide-react";
+import { BookOpen, PlusCircle, Settings, LogOut } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 export default function JournalLayout({
   children,
@@ -17,8 +19,8 @@ export default function JournalLayout({
 
   return (
     <div className="flex min-h-screen text-zinc-800 relative bg-linear-to-br from-stone-100 via-amber-50 to-orange-50">
-      <aside className="w-64 border-r border-stone-200 bg-white/70 backdrop-blur-xl">
-        <div className="p-6 space-y-10">
+      <aside className="w-64 border-r border-stone-200 bg-white/70 backdrop-blur-xl flex flex-col">
+        <div className="p-6 space-y-10 flex-1">
           <h1 className="font-semibold text-xl text-zinc-800 tracking-tight">
             Dear<span className="text-orange-500">Me</span>
           </h1>
@@ -42,6 +44,16 @@ export default function JournalLayout({
               );
             })}
           </nav>
+        </div>
+        
+        <div className="p-6 border-t border-stone-200">
+          <button
+            onClick={() => signOut(auth)}
+            className="flex items-center gap-3 px-4 py-2 rounded-lg transition text-red-500 hover:bg-red-50 w-full"
+          >
+            <LogOut className="h-4 w-4" />
+            Log out
+          </button>
         </div>
       </aside>
 

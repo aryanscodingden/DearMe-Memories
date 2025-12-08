@@ -6,6 +6,8 @@ import {auth, db} from "@/lib/firebase";
 import {collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp} from "firebase/firestore";
 import {onAuthStateChanged} from "firebase/auth";
 import { Users } from "lucide-react";
+import { signOut } from "firebase/auth";
+
 
 export default function JournalPage() {
   const [entries, setEntries] = useState<any[]>([]);
@@ -51,7 +53,6 @@ export default function JournalPage() {
         const monthYear = date 
           ? new Date(date).toLocaleDateString("en-US", { month: "long", year: "numeric" })
           : "No Date";
-        
         if (!groups[monthYear]) {
           groups[monthYear] = [];
         }

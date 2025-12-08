@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {auth,db} from "@/lib/firebase"
 import {addDoc, collection, serverTimestamp} from "firebase/firestore"
 import {useRouter} from "next/navigation"
@@ -9,6 +9,12 @@ export default function NewEntryPage() {
     const router = useRouter();
     const [content, setContent] = useState("");
     const [title, setTitle] = useState("");
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        // Auto-focus the textarea when component mounts
+        textareaRef.current?.focus();
+    }, []);
 
     async function save() {
         await addDoc(collection(db, "journalEntries"), {
@@ -30,6 +36,7 @@ export default function NewEntryPage() {
                 />
         
         <textarea
+            ref={textareaRef}
             className="w-full min-h-[50vh] bg-transparent focus:outline-none resize-none text-lg text-white/90 leading-relaxed"
             placeholder="Start writing...."
             value={content}
