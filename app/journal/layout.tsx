@@ -12,7 +12,6 @@ export default function JournalLayout({
   const pathname = usePathname();
   const links = [
     { label: "Journal", href: "/journal", icon: BookOpen },
-    { label: "New Entry", href: "/journal/new", icon: PlusCircle },
     { label: "Settings", href: "/settings", icon: Settings },
   ];
 
