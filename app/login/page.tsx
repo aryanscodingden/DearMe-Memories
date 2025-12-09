@@ -1,7 +1,7 @@
 "use client";
 
-import { SignIn1 } from "@/components/ui/modern-stunning-sign-in";
+import MordernSignIn from "@/components/ui/sign-in";
 
 export default function LoginPage() {
-  return <SignIn1 />;
+  return <MordernSignIn />;
 }
