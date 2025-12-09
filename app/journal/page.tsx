@@ -162,18 +162,9 @@ export default function JournalPage() {
               </p>
             </div>
             <JournalEditor
-              key={selectedEntry.id}
               content={selectedEntry.content || ""}
               onUpdate={async (html: string) => {
                 if (!selectedEntry.id) return;
-                
-                // Update local state immediately for UI responsiveness
-                setSelectedEntry({
-                  ...selectedEntry,
-                  content: html,
-                });
-                
-                // Update in Firestore
                 await updateDoc(doc(db, "journalEntries", selectedEntry.id), {
                   content: html,
                   updatedAt: serverTimestamp(),
