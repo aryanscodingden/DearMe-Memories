@@ -168,6 +168,18 @@ export default function JournalPage() {
                             {entry.content?.replace(/<[^>]*>?/gm, "") ||
                               "No content.."}
                           </p>
+                          {entry.tags?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {entry.tags.map((tag: string, i: number) => (
+                                <span
+                                  key={i}
+                                  className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-[10px] rounded-md"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </button>
                         <button
                           onClick={(e) => {
