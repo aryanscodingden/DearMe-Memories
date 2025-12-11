@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
@@ -27,6 +28,7 @@ export default function JournalPage() {
   const [newDate, setNewDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -106,6 +108,20 @@ export default function JournalPage() {
             + Add Journal
           </button>
 
+          {activeTagFilter && (
+            <div className="flex justify-between items-center bg-orange-100 p-2 rounded-lg mb-4">
+              <span className="text-sm text-orange-700">
+                Filtering by: #{activeTagFilter}
+              </span>
+              <button
+                className="text-xs px-2 py-1 rounded-md bg-orange-300 text-white"
+                onClick={() => setActiveTagFilter(null)}
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
           {loading ? (
             <div className="text-center text-zinc-400 text-sm">Loading...</div>
           ) : entries.length === 0 ? (
@@ -157,7 +173,17 @@ export default function JournalPage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedEntry(entry);
-                            setTimeout(() => handleDelete(), 0);
+                            setTimeout(async () => {
+                              const ok = confirm("Delete this entry forever?");
+                              if (!ok) return;
+                              try {
+                                await deleteDoc(doc(db, "journalEntries", entry.id));
+                                setSelectedEntry(null);
+                              } catch (err) {
+                                console.error("Error deleting entry", err);
+                                alert("Failed to delete entry. Please try again.");
+                              }
+                            }, 0);
                           }}
                           className="absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-100 transition"
                           title="Delete entry"
@@ -207,7 +233,69 @@ export default function JournalPage() {
                     : "Unknown date"}
                 </p>
               </div>
-          
+              <button
+                onClick={handleDelete}
+                className="px-3 py-1.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200 hover:bg-red-200 transition"
+              >
+                Delete
+              </button>
+            </div>
+            <div className="mb-6">
+              <div className="mt-3">
+                <label className="text-xs text-zinc-500 font-medium">
+                  Tags
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedEntry.tags?.map((tag: string, i: number) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-l bg-orange-100 text-orange-700 px-2 py-1 rounded-md text-xs"
+                  >
+                    #{tag}
+                    <button
+                      className="text-orange-600 hover:text-orange-900"
+                      onClick={async () => {
+                        const newTags = selectedEntry.tags.filter(
+                          (t: string) => t !== tag
+                        );
+                        await updateDoc(
+                          doc(db, "journalEntries", selectedEntry.id),
+                          {
+                            tags: newTags,
+                          }
+                        );
+                        setSelectedEntry({ ...selectedEntry, tags: newTags });
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <input 
+                  type="text"
+                  placeholder="Add Tag.."
+                  className="px-2 py-1 text-xs border border-zinc-300 rounded-md outline-none focus:ring-1 focus:ring-orange-400"
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const tag = (e.target as HTMLInputElement).value.toLowerCase().trim();
+                      if (!tag) return;
+
+                      const newTags = [...(selectedEntry.tags || []), tag];
+
+                      await updateDoc(doc(db, "journalEntries", selectedEntry.id), {
+                        tags: newTags,
+                      });
+
+                      setSelectedEntry({...selectedEntry, tags: newTags});
+
+                      (e.target as HTMLInputElement).value = "";
+
+                    }
+                  }}
+                  />
+              </div>
             </div>
             <JournalEditor
               content={selectedEntry.content || ""}
@@ -274,6 +362,7 @@ export default function JournalPage() {
                         content: "",
                         userId: user.uid,
                         createdAt: selectedDate,
+                        tags: []
                       }
                     );
 
