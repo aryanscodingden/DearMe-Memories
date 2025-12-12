@@ -5,10 +5,17 @@ export async function hcChatCompletion({
     model?: string;
     messages: {role: "system" | "user" | "assistant"; content: string}[];
 }) {
+    const apiKey = process.env.HACKCLUB_API_KEY;
+
+    if (!apiKey) {
+        console.error("Missing API Key in server env!")
+        throw new Error("Missing API key");
+    }
+
     const response = await fetch("https://ai.hackclub.com/proxy/v1/chat/completions", {
         method: "POST",
         headers: {
-            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_HC_API_KEY}`,
+            "Authorization": `Bearer ${apiKey}`,
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -23,5 +30,15 @@ export async function hcChatCompletion({
     }
 
     const data = await response.json();
+
+    const content =
+        data?.choices?.[0]?.message?.content ??
+        data?.choices?.[0]?.delta?.content ??
+        null;
+
+    if (!content) {
+        console.error("Unexpected AI output", data)
+        throw new Error("Empty AI response");
+    }
     return data.choices[0].message.content;
 }

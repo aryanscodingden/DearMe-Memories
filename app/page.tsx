@@ -29,7 +29,6 @@ export default function Home() {
             and rediscover them in the future.
           </p>
 
-          {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
             <Link 
               href="/login"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase"
+import {auth, db} from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import {
     collection, 
@@ -13,6 +13,7 @@ import {
     serverTimestamp,
 } from "firebase/firestore";
 import {Loader2, FileText, Sparkles} from "lucide-react";
+import { Streamdown } from "streamdown";
 
 export default function ReportsPage() {
     const router = useRouter();
@@ -151,10 +152,8 @@ export default function ReportsPage() {
                         <h1 className="text-3xl font-bold mb-6 text-stone-800">
                             Weekly Report
                         </h1>
-                        <div className="prose prose-stone max-w-none">
-                            <div className="whitespace-pre-wrap bg-white/60 p-6 rounded-xl border border-stone-200">
-                                {selectedReport.report}
-                            </div>
+                        <div className="prose prose-stone prose-headings:text-stone-800 prose-p:text-stone-700 prose-strong:text-stone-900 prose-li:text-stone-700 max-w-none bg-white/60 p-8 rounded-xl border border-stone-200">
+                            <Streamdown>{selectedReport.report}</Streamdown>
                         </div>
                     </div>
                 )}  

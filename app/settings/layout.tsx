@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Settings, LogOut } from "lucide-react";
+import { BookOpen, Settings, LogOut, FileText } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 
@@ -15,6 +15,7 @@ export default function SettingsLayout({
   const router = useRouter();
   const links = [
     { label: "Journal", href: "/journal", icon: BookOpen },
+    { label: "Reports", href: "/reports", icon: FileText },
     { label: "Settings", href: "/settings", icon: Settings },
   ];
 
