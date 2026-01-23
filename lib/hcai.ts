@@ -1,5 +1,5 @@
 export async function hcChatCompletion({
-    model = "openai/gpt-5.1",
+    model = "openai/gpt-4o-mini",
     messages, 
 } : {
     model?: string;

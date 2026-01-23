@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {useEditor, EditorContent, Editor} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -28,6 +29,12 @@ export function JournalEditor ({content, onUpdate}: {
             }
         }
     })
+
+    useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            editor.commands.setContent(content);
+        }
+    }, [content, editor]);
 
     return (
         <div className="prose prose-stone max-w-full">

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { hcChatCompletion } from "@/lib/hcai";
-import { db } from "@/lib/firebase";
-import {collection, query, where, getDocs} from "firebase/firestore";
+import { adminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
     try {
@@ -11,12 +10,11 @@ export async function POST(req: Request) {
             return NextResponse.json({error: "Missing UserID" }, {status: 400})
         }
         
-        const q = query(
-            collection(db, "journalEntries"),
-            where("userId", "==", userId)
-        );
+        const snap = await adminDb
+            .collection("journalEntries")
+            .where("userId", "==", userId)
+            .get();
 
-        const snap = await getDocs(q);
         const entries = snap.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),

@@ -10,9 +10,11 @@ import {
     orderBy,
     getDocs,
     addDoc,
+    deleteDoc,
+    doc,
     serverTimestamp,
 } from "firebase/firestore";
-import {Loader2, FileText, Sparkles} from "lucide-react";
+import {Loader2, FileText, Sparkles, Trash2} from "lucide-react";
 import { Streamdown } from "streamdown";
 
 export default function ReportsPage() {
@@ -22,6 +24,8 @@ export default function ReportsPage() {
     const [selectedReport, setSelectedReport] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [reportToDelete, setReportToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         const unsub = auth.onAuthStateChanged((u) => {
@@ -33,7 +37,6 @@ export default function ReportsPage() {
 
     useEffect(() => {
         if (!user) return;
-
         async function loadReports() {
             const q = query(
                 collection(db, "reports"),
@@ -70,19 +73,73 @@ export default function ReportsPage() {
             const newReportData = {
                 report: data.report, 
                 userId: user.uid,
-                createdId: serverTimestamp(),
+                createdAt: serverTimestamp(),
             };
 
-            await addDoc(collection(db, "reports"), newReportData);
+            const docRef = await addDoc(collection(db, "reports"), newReportData);
 
-            setReports([{...newReportData, createdAt: new Date()}, ...reports]);
-            setSelectedReport(newReportData);
+            const savedReport = {
+                id: docRef.id,
+                ...newReportData,
+                createdAt: new Date(),
+            };
+
+            setReports([savedReport, ...reports]);
+            setSelectedReport(savedReport);
         } catch (err) {
             console.error(err);
             alert("Failed to generate report.");
         }
         setGenerating(false);
     }
+
+    async function deleteReport() {
+        if (!reportToDelete) return;
+
+        try {
+            await deleteDoc(doc(db, "reports", reportToDelete));
+            setReports(reports.filter(r => r.id !== reportToDelete));
+            if (selectedReport?.id === reportToDelete) {
+                setSelectedReport(null);
+            }
+            setShowDeleteModal(false);
+            setReportToDelete(null);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to delete report.");
+        }
+    }
+
+    async function downloadPDF() {
+        if (!selectedReport) return;
+
+        try {
+            const res = await fetch("/api/reportPDF", {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({markdown: selectedReport.report})
+            });
+
+        if (!res.ok) {
+            alert("Failed to generate PDF")
+            return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "DearMe-Report.pdf";
+        a.click();
+
+        URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(err);
+            alert("Could not download pdf")
+        }
+    }
+
     return (
         <div className="h-screen flex">
             <aside className="w-80 bg-white/40 border-r border-stone-200 backdrop-blur-md flex flex-col">
@@ -114,27 +171,40 @@ export default function ReportsPage() {
                         reports.map((rep) => {
                             const date = rep.createdAt?.toDate?.() || new Date();
                             return (
-                                <button
-                                    key={rep.id}
-                                    onClick={() => setSelectedReport(rep)}
-                                    className={`w-full p-4 text-left rounded-xl border transition ${
-                                            selectedReport?.id === rep.id
-                                            ? "bg-orange-100 border-orange-300"
-                                            : "hover:bg-white/60 border-stone-200"
-                                        }`}
-                                >
-                                    <div className="flex items-start gap-2">
-                                        <FileText className="w-5 h-5 text-orange-500 mt-1" />
-                                        <div>
-                                            <p className="font-medium text-sm">
-                                                {date.toLocaleDateString()}
-                                            </p>
-                                            <p className="text-xs text-zinc-500">
-                                                Weekly Report
-                                            </p>
+                                <div key={rep.id} className="relative group">
+                                    <button
+                                        onClick={() => setSelectedReport(rep)}
+                                        className={`w-full p-4 text-left rounded-xl border transition ${
+                                                selectedReport?.id === rep.id
+                                                ? "bg-orange-100 border-orange-300"
+                                                : "hover:bg-white/60 border-stone-200"
+                                            }`}
+                                    >
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="flex items-start gap-2">
+                                                <FileText className="w-5 h-5 text-orange-500 mt-1" />
+                                                <div>
+                                                    <p className="font-medium text-sm">
+                                                        {date.toLocaleDateString()}
+                                                    </p>
+                                                    <p className="text-xs text-zinc-500">
+                                                        Weekly Report
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </button>
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setReportToDelete(rep.id);
+                                            setShowDeleteModal(true);
+                                        }}
+                                        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition p-1.5 rounded-md hover:bg-red-100"
+                                    >
+                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                    </button>
+                                </div>
                             );
                         })
                     )}
@@ -149,14 +219,50 @@ export default function ReportsPage() {
                     </div>
                 ) : (
                     <div className="max-w-3xl mx-auto">
-                        <h1 className="text-3xl font-bold mb-6 text-stone-800">
-                            Weekly Report
-                        </h1>
+                        <div className="flex justify-between items-center mb-6">
+                            <h1 className="text-3xl font-bold text-stone-800">
+                                Weekly Report
+                            </h1>
+                            <button
+                                onClick={downloadPDF}
+                                className="px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition"
+                            >
+                                Download PDF
+                            </button>
+                        </div>
                         <div className="prose prose-stone prose-headings:text-stone-800 prose-p:text-stone-700 prose-strong:text-stone-900 prose-li:text-stone-700 max-w-none bg-white/60 p-8 rounded-xl border border-stone-200">
                             <Streamdown>{selectedReport.report}</Streamdown>
                         </div>
                     </div>
                 )}  
+                {showDeleteModal && (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-xl w-80 shadow-xl space-y-4 text-center">
+                            <h2 className="text-lg font-semibold text-zinc-800">
+                                Delete this report?
+                            </h2>
+                            <p className="text-sm text-zinc-500">
+                                This action cannot be undone.
+                            </p>
+
+                            <div className="flex flex-col gap-2 pt-2">
+                                <button
+                                    onClick={deleteReport}
+                                    className="w-full py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-500 transition"
+                                    >
+                                        Delete
+                                    </button>
+                                <button 
+                                    onClick={() => setShowDeleteModal(false)}
+                                    className="w-full py-2 text-sm text-zinc-500 hover:text-zinc-700 transition"
+                                    >
+                                        Cancel
+                                    </button>
+                            </div>
+
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     )

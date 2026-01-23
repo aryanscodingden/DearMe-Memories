@@ -14,6 +14,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { JournalEditor } from "@/components/ui/editor";
@@ -367,13 +368,14 @@ export default function JournalPage() {
 
                   try {
                     const selectedDate = new Date(`${newDate}T${newTime}`);
+                    const firestoreTimestamp = Timestamp.fromDate(selectedDate);
                     const docRef = await addDoc(
                       collection(db, "journalEntries"),
                       {
                         title: newTitle.trim(),
                         content: "",
                         userId: user.uid,
-                        createdAt: selectedDate,
+                        createdAt: firestoreTimestamp,
                         tags: []
                       }
                     );
@@ -382,7 +384,7 @@ export default function JournalPage() {
                       id: docRef.id,
                       title: newTitle.trim(),
                       content: "",
-                      createdAt: { toDate: () => selectedDate },
+                      createdAt: firestoreTimestamp,
                     });
 
                     setShowAddModal(false);
